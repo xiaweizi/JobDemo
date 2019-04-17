@@ -27,6 +27,7 @@ public class MyJobService extends JobService {
     public static final String KEY_INTENT_MESSENGER = "key_intent_messenger";
     public static final int MSG_START_JOB = 1;
     public static final int MSG_STOP_JOB = 2;
+    public static final int MSG_DO_WORK_FINISH = 2;
 
     @Override
     public void onCreate() {
@@ -44,14 +45,14 @@ public class MyJobService extends JobService {
     @Override
     public boolean onStartJob(JobParameters params) {
         Log.i(TAG, "onStartJob");
-        new MyAsyncTask(this).execute();
+        new MyAsyncTask(this).execute(params);
         return true;
     }
 
     @Override
     public boolean onStopJob(JobParameters params) {
         Log.i(TAG, "onStopJob: ");
-        sendMessage(MSG_STOP_JOB, params.getJobId());
+        sendMessage(MSG_STOP_JOB, "stop:" + params.getJobId());
         return false;
     }
 
@@ -73,7 +74,7 @@ public class MyJobService extends JobService {
         }
     }
 
-    static class MyAsyncTask extends AsyncTask<Void, Void, String> {
+    static class MyAsyncTask extends AsyncTask<JobParameters, Void, String> {
         WeakReference<MyJobService> mService;
 
         MyAsyncTask(MyJobService service) {
@@ -81,21 +82,31 @@ public class MyJobService extends JobService {
         }
 
         @Override
-        protected String doInBackground(Void... voids) {
+        protected void onPreExecute() {
+            MyJobService theService = mService.get();
+            if (theService == null) return;
+            theService.sendMessage(MSG_START_JOB, "start job work!");
+        }
+
+        @Override
+        protected String doInBackground(JobParameters... jobParameters) {
+            MyJobService theService = mService.get();
+            if (theService == null) return "service is null";
             try {
                 // 模拟耗时操作
-                Thread.sleep(4000);
+                Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            return "result";
+            theService.jobFinished(jobParameters[0], false);
+            return "work finish!";
         }
 
         @Override
         protected void onPostExecute(String s) {
             MyJobService theService = mService.get();
             if (theService == null) return;
-            theService.sendMessage(MSG_START_JOB, s);
+            theService.sendMessage(MSG_DO_WORK_FINISH, s);
         }
     }
 

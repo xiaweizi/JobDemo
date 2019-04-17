@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mHandler = new MyHandler(this);
+        startService();
         mAdapter = new MyAdapter(this);
         mListView = findViewById(R.id.list_view);
         findViewById(R.id.bt_start_job).setOnClickListener(this);
@@ -42,9 +43,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAdapter.setData(mData);
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
+    private void startService() {
         Intent jobService = new Intent(this, MyJobService.class);
         Messenger messenger = new Messenger(mHandler);
         jobService.putExtra(MyJobService.KEY_INTENT_MESSENGER, messenger);
@@ -71,18 +70,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         extras.putString("key1", "value1");
         extras.putString("key2", "value2");
         build.setExtras(extras)
-                .setMinimumLatency(1000)
-                .setOverrideDeadline(2000)
+
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
-//        build.setPeriodic(2000);
-//        build.setPersisted(true);
+        build.setPeriodic(1000);
+        build.setPersisted(true);
 //        build.setRequiresCharging(true);
         return build.build();
     }
 
     private void addData(String content) {
         if (mAdapter != null) {
-            mAdapter.addData(content);
+            mAdapter.addData((mAdapter.getCount() + 1) + ".   " + content);
+            mListView.setSelection(mAdapter.getCount()-1);
         }
     }
 
@@ -121,12 +120,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
             theActivity.addData(msg.obj.toString());
             switch (msg.what) {
-                case MyJobService.MSG_START_JOB:
-                    Log.i(TAG, "MSG_START_JOB: ");
-                    break;
-                case MyJobService.MSG_STOP_JOB:
-                    Log.i(TAG, "MSG_STOP_JOB: ");
-                    break;
+//                case MyJobService.MSG_START_JOB:
+//                    Log.i(TAG, "MSG_START_JOB: ");
+//                    break;
+//                case MyJobService.MSG_STOP_JOB:
+//                    Log.i(TAG, "MSG_STOP_JOB: ");
+//                    break;
                 default:
                     break;
             }
