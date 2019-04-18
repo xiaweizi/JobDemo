@@ -4,35 +4,34 @@ import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
-import android.os.Messenger;
 import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "Job--Main::";
-    private MyHandler mHandler;
+    private static final int DEBUG_COLOR = Color.parseColor("#5d8bdf");
+    public static final int SERVICE_COLOR = Color.parseColor("#2fcc45");
+    private Handler mHandler;
     private ListView mListView;
     private MyAdapter mAdapter;
-    private List<String> mData = new ArrayList<>();
+    private List<LogContent> mData = new ArrayList<>();
+    public static MainActivity mainActivity; // 方便测试使用 static，真正场景严禁使用
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mHandler = new MyHandler(this);
-        startService();
+        mainActivity = this;
+        mHandler = new Handler();
         mAdapter = new MyAdapter(this);
         mListView = findViewById(R.id.list_view);
         findViewById(R.id.bt_start_job).setOnClickListener(this);
@@ -43,20 +42,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAdapter.setData(mData);
     }
 
-    private void startService() {
-        Intent jobService = new Intent(this, MyJobService.class);
-        Messenger messenger = new Messenger(mHandler);
-        jobService.putExtra(MyJobService.KEY_INTENT_MESSENGER, messenger);
-        startService(jobService);
-    }
-
     private void startJob() {
-        Log.i(TAG, "startJob");
+        addData("click start job", DEBUG_COLOR);
         getJobScheduler().schedule(createJobInfo(1));
     }
 
     private void cancelAllJobs() {
-        Log.i(TAG, "cancelAllJobs");
+        addData("click cancel all jobs", DEBUG_COLOR);
         getJobScheduler().cancelAll();
     }
 
@@ -69,19 +61,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         PersistableBundle extras = new PersistableBundle();
         extras.putString("key1", "value1");
         extras.putString("key2", "value2");
-        build.setExtras(extras)
-
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
-        build.setPeriodic(1000);
-        build.setPersisted(true);
-//        build.setRequiresCharging(true);
+        build.setExtras(extras);
+        build.setRequiresCharging(true);
+//        build.setOverrideDeadline(5000);
         return build.build();
     }
 
     private void addData(String content) {
-        if (mAdapter != null) {
-            mAdapter.addData((mAdapter.getCount() + 1) + ".   " + content);
-            mListView.setSelection(mAdapter.getCount()-1);
+        addData(content, Color.parseColor("#2fcc45"));
+    }
+
+    public void addData(final String content, final int color) {
+        if (mAdapter != null && mHandler != null) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    LogContent logContent = new LogContent();
+                    logContent.color = color;
+                    logContent.content = (mAdapter.getCount() + 1) + ".   " + content;
+                    mAdapter.addData(logContent);
+                    mListView.smoothScrollToPosition(mAdapter.getCount() - 1);
+                }
+            });
         }
     }
 
@@ -105,30 +106,4 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAdapter.notifyDataSetChanged();
     }
 
-    static class MyHandler extends Handler {
-        WeakReference<MainActivity> mActivity;
-
-        MyHandler(MainActivity activity) {
-            mActivity = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            MainActivity theActivity = mActivity.get();
-            if (theActivity == null || theActivity.isFinishing()) {
-                return;
-            }
-            theActivity.addData(msg.obj.toString());
-            switch (msg.what) {
-//                case MyJobService.MSG_START_JOB:
-//                    Log.i(TAG, "MSG_START_JOB: ");
-//                    break;
-//                case MyJobService.MSG_STOP_JOB:
-//                    Log.i(TAG, "MSG_STOP_JOB: ");
-//                    break;
-                default:
-                    break;
-            }
-        }
-    }
 }

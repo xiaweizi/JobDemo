@@ -23,7 +23,7 @@ import java.util.List;
 public class MyAdapter extends BaseAdapter {
 
     private Context mContext;
-    private List<String> mData;
+    private List<LogContent> mData;
 
     public MyAdapter(Context context) {
         this.mContext = context;
@@ -35,21 +35,21 @@ public class MyAdapter extends BaseAdapter {
         return R.layout.item;
     }
 
-    public void setData(List<String> data) {
+    public void setData(List<LogContent> data) {
         if (data != null) {
             mData = data;
             notifyDataSetChanged();
         }
     }
 
-    public void addData(String bean) {
+    public void addData(LogContent bean) {
         if (bean != null) {
             mData.add(bean);
             notifyDataSetChanged();
         }
     }
 
-    public List<String> getData() {
+    public List<LogContent> getData() {
         return this.mData;
     }
 
@@ -59,7 +59,7 @@ public class MyAdapter extends BaseAdapter {
     }
 
     @Override
-    public String getItem(int position) {
+    public LogContent getItem(int position) {
         return mData.get(position);
     }
 
@@ -87,8 +87,9 @@ public class MyAdapter extends BaseAdapter {
             content = itemView.findViewById(R.id.tv_item_content);
         }
 
-        void bind(String bean) {
-            content.setText(bean);
+        void bind(LogContent bean) {
+            content.setText(bean.content);
+            content.setTextColor(bean.color);
         }
     }
 }

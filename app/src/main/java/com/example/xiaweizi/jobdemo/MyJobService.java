@@ -2,11 +2,7 @@ package com.example.xiaweizi.jobdemo;
 
 import android.app.job.JobParameters;
 import android.app.job.JobService;
-import android.content.Intent;
 import android.os.AsyncTask;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
@@ -23,23 +19,12 @@ import java.lang.ref.WeakReference;
 
 public class MyJobService extends JobService {
     private static final String TAG = "Job--Service::";
-    private Messenger mMessenger;
     public static final String KEY_INTENT_MESSENGER = "key_intent_messenger";
-    public static final int MSG_START_JOB = 1;
-    public static final int MSG_STOP_JOB = 2;
-    public static final int MSG_DO_WORK_FINISH = 2;
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate");
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "onStartCommand");
-        mMessenger = intent.getParcelableExtra(KEY_INTENT_MESSENGER);
-        return START_NOT_STICKY;
     }
 
     @Override
@@ -52,7 +37,7 @@ public class MyJobService extends JobService {
     @Override
     public boolean onStopJob(JobParameters params) {
         Log.i(TAG, "onStopJob: ");
-        sendMessage(MSG_STOP_JOB, "stop:" + params.getJobId());
+        addData("stop:" + params.getJobId());
         return false;
     }
 
@@ -60,17 +45,12 @@ public class MyJobService extends JobService {
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "onDestroy");
+        addData("on destroy");
     }
 
-    private void sendMessage(int messageId, Object params) {
-        if (mMessenger == null) return;
-        Message message = Message.obtain();
-        message.what = messageId;
-        message.obj = "service--" + params;
-        try {
-            mMessenger.send(message);
-        } catch (RemoteException e) {
-            e.printStackTrace();
+    private void addData(String content) {
+        if (MainActivity.mainActivity != null) {
+            MainActivity.mainActivity.addData("service--" + content, MainActivity.SERVICE_COLOR);
         }
     }
 
@@ -78,35 +58,38 @@ public class MyJobService extends JobService {
         WeakReference<MyJobService> mService;
 
         MyAsyncTask(MyJobService service) {
-            mService = new WeakReference<MyJobService>(service);
+            mService = new WeakReference<>(service);
         }
 
         @Override
         protected void onPreExecute() {
             MyJobService theService = mService.get();
             if (theService == null) return;
-            theService.sendMessage(MSG_START_JOB, "start job work!");
+            Log.i(TAG, "onPreExecute: ");
+            theService.addData("start job work!");
         }
 
         @Override
         protected String doInBackground(JobParameters... jobParameters) {
             MyJobService theService = mService.get();
             if (theService == null) return "service is null";
+            Log.i(TAG, "doInBackground: " + Thread.currentThread().getName());
             try {
                 // 模拟耗时操作
-                Thread.sleep(2000);
+                Thread.sleep(4000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             theService.jobFinished(jobParameters[0], false);
-            return "work finish!";
+            return jobParameters[0].getJobId() + " work finish!";
         }
 
         @Override
         protected void onPostExecute(String s) {
             MyJobService theService = mService.get();
             if (theService == null) return;
-            theService.sendMessage(MSG_DO_WORK_FINISH, s);
+            Log.i(TAG, "onPostExecute: " + s);
+            theService.addData(s);
         }
     }
 
