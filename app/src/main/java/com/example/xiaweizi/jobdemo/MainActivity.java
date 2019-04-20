@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
     }
 
+
     private JobInfo createJobInfo(int jobId) {
         JobInfo.Builder build = new JobInfo.Builder(jobId, new ComponentName(getPackageName(), MyJobService.class.getName()));
         PersistableBundle extras = new PersistableBundle();
@@ -63,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         extras.putString("key2", "value2");
         build.setExtras(extras);
         build.setRequiresCharging(true);
-//        build.setOverrideDeadline(5000);
+        build.setOverrideDeadline(2000);
         return build.build();
     }
 

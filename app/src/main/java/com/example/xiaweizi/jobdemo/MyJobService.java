@@ -19,7 +19,7 @@ import java.lang.ref.WeakReference;
 
 public class MyJobService extends JobService {
     private static final String TAG = "Job--Service::";
-    public static final String KEY_INTENT_MESSENGER = "key_intent_messenger";
+    private boolean isDestroy = false;
 
     @Override
     public void onCreate() {
@@ -31,6 +31,7 @@ public class MyJobService extends JobService {
     public boolean onStartJob(JobParameters params) {
         Log.i(TAG, "onStartJob");
         new MyAsyncTask(this).execute(params);
+        // 返回true，表示该工作耗时，同时工作处理完成后需要调用jobFinished销毁
         return true;
     }
 
@@ -43,6 +44,7 @@ public class MyJobService extends JobService {
 
     @Override
     public void onDestroy() {
+        isDestroy = true;
         super.onDestroy();
         Log.i(TAG, "onDestroy");
         addData("on destroy");
@@ -76,7 +78,7 @@ public class MyJobService extends JobService {
             Log.i(TAG, "doInBackground: " + Thread.currentThread().getName());
             try {
                 // 模拟耗时操作
-                Thread.sleep(4000);
+                Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -87,7 +89,7 @@ public class MyJobService extends JobService {
         @Override
         protected void onPostExecute(String s) {
             MyJobService theService = mService.get();
-            if (theService == null) return;
+            if (theService == null || theService.isDestroy) return;
             Log.i(TAG, "onPostExecute: " + s);
             theService.addData(s);
         }
