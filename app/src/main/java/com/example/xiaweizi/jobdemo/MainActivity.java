@@ -10,7 +10,9 @@ import android.os.Handler;
 import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,9 +39,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.bt_start_job).setOnClickListener(this);
         findViewById(R.id.bt_cancel_all).setOnClickListener(this);
         findViewById(R.id.bt_clear_log).setOnClickListener(this);
+        final TextView marqueeTextView = findViewById(R.id.tv_marquee);
+        final ViewGroup.LayoutParams layoutParams = marqueeTextView.getLayoutParams();
 
         mListView.setAdapter(mAdapter);
         mAdapter.setData(mData);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                layoutParams.width = 400;
+                marqueeTextView.setLayoutParams(layoutParams);
+            }
+        }, 2000);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                marqueeTextView.setLayoutParams(layoutParams);
+            }
+        }, 4000);
+
     }
 
     private void startJob() {

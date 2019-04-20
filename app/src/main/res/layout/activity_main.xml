@@ -9,7 +9,7 @@
     <ListView
         android:id="@+id/list_view"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
+        android:layout_height="200dp"
         android:divider="@null" />
 
     <Button
@@ -42,5 +42,14 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/bt_cancel_all" />
+
+    <com.example.xiaweizi.jobdemo.MarqueeTextView
+        android:background="#0ff"
+        android:id="@+id/tv_marquee"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="我是跑马灯我是跑马灯我是跑马灯"
+        android:textSize="20sp"
+        app:layout_constraintTop_toBottomOf="@id/bt_clear_log" />
 
 </android.support.constraint.ConstraintLayout>
