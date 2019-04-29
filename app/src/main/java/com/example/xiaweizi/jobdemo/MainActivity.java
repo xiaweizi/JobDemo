@@ -7,13 +7,16 @@ import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,18 +25,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final String TAG = "Job--Main::";
     private static final int DEBUG_COLOR = Color.parseColor("#5d8bdf");
     public static final int SERVICE_COLOR = Color.parseColor("#2fcc45");
-    private Handler mHandler;
     private ListView mListView;
     private MyAdapter mAdapter;
     private List<LogContent> mData = new ArrayList<>();
     public static MainActivity mainActivity; // 方便测试使用 static，真正场景严禁使用
+    private MyHandler mHandler = new MyHandler(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mainActivity = this;
-        mHandler = new Handler();
         mAdapter = new MyAdapter(this);
         mListView = findViewById(R.id.list_view);
         findViewById(R.id.bt_start_job).setOnClickListener(this);
@@ -63,7 +65,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void startJob() {
         addData("click start job", DEBUG_COLOR);
-        getJobScheduler().schedule(createJobInfo(1));
+        mHandler.reset();
+        mHandler.removeMessages(1);
+        mHandler.sendEmptyMessage(1);
+        getJobScheduler().schedule(createJobInfo(110));
     }
 
     private void cancelAllJobs() {
@@ -82,8 +87,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         extras.putString("key1", "value1");
         extras.putString("key2", "value2");
         build.setExtras(extras);
-        build.setRequiresCharging(true);
-        build.setOverrideDeadline(2000);
+        build.setMinimumLatency(15000);
+        build.setOverrideDeadline(10000);
         return build.build();
     }
 
@@ -126,4 +131,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAdapter.notifyDataSetChanged();
     }
 
+    static class MyHandler extends Handler {
+        WeakReference<MainActivity> mActivity;
+        private int count = 0;
+
+        MyHandler(MainActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            MainActivity theActivity = mActivity.get();
+            if (theActivity == null || theActivity.isFinishing()) {
+                return;
+            }
+            JobScheduler jobScheduler = (JobScheduler) theActivity.getSystemService(JOB_SCHEDULER_SERVICE);
+            if (jobScheduler != null) {
+                List<JobInfo> allPendingJobs = jobScheduler.getAllPendingJobs();
+                if (allPendingJobs != null) {
+                    Log.i(TAG, "pending jobs size: " + allPendingJobs.size());
+                    if (allPendingJobs.size() > 0) {
+                        Log.i(TAG, "job id: " + allPendingJobs.get(0).getId());
+                    }
+                }
+            }
+            theActivity.addData("count--" + count);
+            count ++;
+            sendEmptyMessageDelayed(1, 1000);
+        }
+
+        void reset() {
+            count = 0;
+        }
+    }
 }
